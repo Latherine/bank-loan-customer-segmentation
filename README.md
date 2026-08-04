@@ -25,7 +25,13 @@ bank-loan-customer-segmentation/
 ├── Term_Loan_Report.csv                  # Loan data aggregated by term
 ├── Employment_Length_Loan_Report.csv     # Loan data by employment length
 ├── Purpose_Loan_Report.csv              # Loan data by loan purpose
-└── Home_ownership_Loan_Report.csv       # Loan data by home ownership
+├── Home_ownership_Loan_Report.csv       # Loan data by home ownership
+│
+├── dashboard_fix.pbix                    # Updated dashboard — adds ML risk page
+├── ml_risk_prediction/
+│   ├── loan_risk_prediction_ml.ipynb     # ML model: predicts risk of Current loans
+│   └── current_loan_risk_predictions.csv # Per-loan risk probabilities (1,098 loans)
+└── report/Loan_Risk_ML_Improvement_Report.docx / .pdf   # ML improvement report
 ```
 
 ---
@@ -109,6 +115,21 @@ Uses a raw string path (`r''`) to safely read the CSV on Windows without unicode
 
 ---
 
+## 🤖 Machine Learning Risk Prediction (Update)
+
+The original Good/Bad Loan split above counts every `Current` (still-open) loan as **Good Loan** by default — a rule, not a measurement. `ml_risk_prediction/loan_risk_prediction_ml.ipynb` replaces that assumption with a model trained on the 37,478 loans whose outcome is already known (Fully Paid / Charged Off), then scores the 1,098 open `Current` loans with a probability of default.
+
+| Metric | Value |
+|--------|-------|
+| Best model | CatBoost (Optuna-tuned, 100 trials) |
+| AUC-ROC | **0.6999** vs. **0.50** for the original "assume good" rule → **+40% relative improvement** |
+| Current loans reclassified High Risk | 705 / 1,098 (64.2%), **$11.85M** in principal |
+| Risk-adjusted Bad Loan Rate | 13.8% (reported) → **15.6–15.65%** |
+
+Full write-up, methodology, and figures: [`report/Loan_Risk_ML_Improvement_Report.pdf`](report/Loan_Risk_ML_Improvement_Report.pdf) ([.docx](report/Loan_Risk_ML_Improvement_Report.docx)). The updated dashboard (`dashboard_fix.pbix`) adds a **Current Status Prediction** page built on `current_loan_risk_predictions.csv`.
+
+---
+
 ## 🛠️ Tools Used
 
 | Tool | Purpose |
@@ -116,7 +137,8 @@ Uses a raw string path (`r''`) to safely read the CSV on Windows without unicode
 | **MySQL** | Data querying and aggregation |
 | **Power BI** | Interactive dashboard and visualisation |
 | **Python / Pandas** | Exploratory data analysis |
-| **Microsoft Word** | Strategy report generation |
+| **LightGBM / CatBoost / Optuna / SHAP** | Loan risk prediction model, tuning, and explainability |
+| **Microsoft Word** | Strategy and risk report generation |
 
 ---
 
@@ -126,6 +148,7 @@ Uses a raw string path (`r''`) to safely read the CSV on Windows without unicode
 2. Run `sql_query.sql` to reproduce all aggregated reports
 3. Open `dashboard.pbix` in Power BI Desktop to explore the interactive dashboard
 4. Review `Bank_Loan_Targeted_Customer_Report.docx` for the full acquisition strategy
+5. Run `ml_risk_prediction/loan_risk_prediction_ml.ipynb` to reproduce the risk model, or open `dashboard_fix.pbix` / `report/Loan_Risk_ML_Improvement_Report.pdf` to see the results
 
 ---
 
